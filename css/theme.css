@@ -1,1 +1,43 @@
+:root {
+  --petro-green:#006C35; 
+  --petro-green-dark:#004B1C;
+  --petro-yellow:#FFCC00;
+  --bg:#071019; 
+  --panel:#0B1420; 
+  --panel-2:#0A1220;
+  --muted:#94a3b8; 
+  --text:#e6eef7;
+  --accent:var(--petro-green); 
+  --warn:#f59e0b; 
+  --danger:#ef4444; 
+  --ok:#16a34a;
+  --radius:16px; 
+  --shadow:0 10px 30px rgba(0,0,0,.25);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; 
+  background:linear-gradient(145deg,#05101c,#08192a); 
+  color:var(--text); 
+  font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu
+}
+
+.container{max-width:1200px;margin:0 auto;padding:16px}
+.topbar{position:sticky;top:0;z-index:10;backdrop-filter:blur(6px);background:rgba(5,16,28,.7);border-bottom:1px solid rgba(255,255,255,.06)}
+.topbar-wrap{display:flex;align-items:center;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--petro-green),#00a86b);display:grid;place-items:center;box-shadow:var(--shadow)}
+.title{font-weight:700}
+.sub{font-size:12px}
+.top-actions{display:flex;align-items:center;gap:10px}
+
+.layout{display:grid;grid-template-columns:260px 1fr;gap:16px;padding:16px}
+@media (max-width:960px){.layout{grid-template-columns:1fr}}
+
+aside{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px}
+.nav{display:flex;flex-direction:column;gap:6px}
+.nav button{display:flex;gap:10px;align-items:center;width:100%;text-align:left}
+
+.panel{background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid rgba(255,255,255,.06);border-radius:var(--ra
 
