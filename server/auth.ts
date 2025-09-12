@@ -8,6 +8,13 @@ export type Role = 'desenvolvedor' | 'fiscalizacao' | 'operacao' | 'administraca
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
 const COOKIE_NAME = 'sopep_token';
 
+const rolePerms: Record<Role, string[]> = {
+  desenvolvedor:   ['view:all','approve','stock:move','stock:edit','users:manage','items:manage','reorder:manage'],
+  fiscalizacao:    ['view:all','approve','reorder:manage'],
+  operacao:        ['view:dashboard','view:registro','view:kits'],
+  administracao:   ['view:all','stock:move','stock:edit','items:manage','reorder:manage']
+};
+
 export function loginHandler(req: Request, res: Response) {
   const { username, password } = req.body as { username: string; password: string };
   const user = db.users.find(u => u.username === username && u.password === password);
@@ -23,7 +30,7 @@ export function meHandler(req: Request, res: Response) {
   if (!payload) return res.status(401).json({ error: 'Não autenticado' });
   const user = db.users.find(u => u.id === payload.sub);
   if (!user) return res.status(401).json({ error: 'Não autenticado' });
-  res.json({ id: user.id, name: user.name, role: user.role });
+  res.json({ id: user.id, name: user.name, role: user.role, perms: rolePerms[user.role] ?? [] });
 }
 
 export function logoutHandler(_: Request, res: Response) {

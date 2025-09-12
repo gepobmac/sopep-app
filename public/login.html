@@ -4,43 +4,46 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>SOPEP | Login</title>
-  <link rel="stylesheet" href="/css/theme.css" />
+  <style>
+    :root{
+      --petro-green:#006C35; --petro-yellow:#FFCC00;
+      --bg:#0f172a; --panel:#111827; --text:#e5e7eb;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0; display:grid; place-items:center; background:linear-gradient(135deg,var(--bg),#0a0f20); color:var(--text); font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu;}
+    .card{width:320px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1); border-radius:16px; padding:20px}
+    .brand{display:flex; gap:10px; align-items:center; margin-bottom:10px}
+    .logo{width:40px; height:40px; border-radius:10px; background:linear-gradient(135deg,var(--petro-green),#0ea5a6); display:grid; place-items:center}
+    input{width:100%; padding:10px; border:none; border-radius:10px; background:rgba(255,255,255,.08); color:var(--text); margin:6px 0}
+    button{width:100%; padding:10px; border:none; border-radius:10px; background:var(--petro-green); color:#fff; font-weight:700; cursor:pointer}
+    .muted{color:#94a3b8; font-size:12px}
+    .msg{min-height:18px; color:var(--petro-yellow); font-size:13px; margin-top:6px}
+  </style>
 </head>
-<body class="center">
-  <div class="card auth" style="max-width:360px;margin:10vh auto;">
-    <div class="logo" aria-hidden="true"></div>
-    <h1>SOPEP</h1>
-    <p class="muted">Controle de Kits e Galpão</p>
-
-    <form id="formLogin" class="grid">
-      <label>Usuário</label>
-      <input class="input" id="loginUser" autocomplete="username" required />
-      <label>Senha</label>
-      <input class="input" id="loginPass" type="password" autocomplete="current-password" required />
-      <button type="submit" class="btn">Entrar</button>
-    </form>
-
-    <p class="muted small" style="margin-top:8px">
-      Usuários demo: <code>dev/dev123</code> · <code>fiscal/fiscal123</code> · <code>oper/oper123</code> · <code>admin/admin123</code>
-    </p>
-    <div id="loginMsg" class="msg"></div>
+<body>
+  <div class="card">
+    <div class="brand">
+      <div class="logo" aria-hidden="true"></div>
+      <div>
+        <div style="font-weight:700">SOPEP</div>
+        <div class="muted">Controle de Kits e Galpão</div>
+      </div>
+    </div>
+    <input id="user" placeholder="Usuário (ex.: dev, fiscal, oper, admin)" />
+    <input id="pass" type="password" placeholder="Senha (ex.: dev123)" />
+    <button id="btn">Entrar</button>
+    <div class="msg" id="msg"></div>
   </div>
 
-  <script type="module">
-    const $ = (s,el=document)=>el.querySelector(s);
-    $('#formLogin').addEventListener('submit', async (e)=>{
-      e.preventDefault();
-      const username = ($('#loginUser').value||'').trim();
-      const password = ($('#loginPass').value||'').trim();
-      const r = await fetch('/api/login', {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        credentials:'include',
-        body: JSON.stringify({ username, password })
-      });
-      if(!r.ok){ $('#loginMsg').textContent = 'Usuário/senha inválidos'; return }
-      location.href = '/app';
-    });
-  </script>
+<script>
+document.getElementById('btn').onclick = async ()=>{
+  const username = document.getElementById('user').value.trim();
+  const password = document.getElementById('pass').value.trim();
+  const res = await fetch('/api/login',{method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify({username,password})});
+  if(!res.ok){ document.getElementById('msg').textContent='Credenciais inválidas'; return; }
+  location.href = '/app';
+};
+</script>
 </body>
 </html>

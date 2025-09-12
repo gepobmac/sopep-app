@@ -4,7 +4,7 @@ export type Role = 'desenvolvedor' | 'fiscalizacao' | 'operacao' | 'administraca
 export interface User {
   id: string;
   username: string;
-  password: string; // DEMO: texto puro; em produção use hash/bcrypt
+  password: string;
   role: Role;
   name: string;
 }
@@ -14,9 +14,7 @@ export interface Item {
   qtdKit: number; min: number; estoque: number;
 }
 
-export interface Kit {
-  id: string; nome: string; local: string; ativo: boolean;
-}
+export interface Kit { id: string; nome: string; local: string; ativo: boolean; }
 
 export interface Registro {
   id: string; data: string; resp: string; kit: string;
@@ -36,7 +34,8 @@ export interface Movimento {
 
 export interface Reorder {
   id: string; itemId: string; item: string; criadoEm: string;
-  estoque: number; min: number; sugerido: number; status: 'aberta'|'comprado'|'fechado';
+  estoque: number; min: number; sugerido: number;
+  status: 'aberta'|'aprovacao'|'comprado'|'fechado';
 }
 
 export const db = {
@@ -85,5 +84,4 @@ export function uuid(prefix='SO') {
   return `${prefix}-${new Date().toISOString().slice(0,10).replaceAll('-','')}-${Math.random().toString(36).slice(2,8).toUpperCase()}`;
 }
 
-// Inicial: garantir mínimos
 recalcMinimums();

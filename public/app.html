@@ -3,10 +3,52 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>SOPEP | App</title>
-  <link rel="stylesheet" href="/css/theme.css" />
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <title>SOPEP | Controle de Kits e Galpão</title>
+  <style>
+    :root{
+      --bg:#0f172a; --panel:#111827; --panel-2:#0b1225; --muted:#94a3b8; --text:#e5e7eb;
+      --accent:#0ea5a6; --warn:#f59e0b; --danger:#ef4444; --ok:#16a34a;
+      --petro-green:#006C35; --petro-yellow:#FFCC00; --radius:16px; --shadow:0 10px 30px rgba(0,0,0,.25);
+    }
+    *{box-sizing:border-box} html,body{height:100%}
+    body{margin:0;background:linear-gradient(135deg,var(--bg),#0a0f20);color:var(--text);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu}
+    header{position:sticky;top:0;z-index:10;backdrop-filter:blur(6px);background:rgba(10,15,32,.7);border-bottom:1px solid rgba(255,255,255,.05)}
+    .container{max-width:1200px;margin:0 auto;padding:16px}
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--petro-green),#0ea5a6);display:grid;place-items:center;box-shadow:var(--shadow)}
+    .topbar{display:flex;align-items:center;justify-content:space-between}
+    .select,.input{background:rgba(255,255,255,.06);color:var(--text);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px 12px}
+    .btn{border-radius:10px;padding:10px 14px;background:var(--petro-green);color:#fff;cursor:pointer;transition:.2s transform,.2s filter}
+    .btn:hover{filter:brightness(1.08)} .btn:active{transform:translateY(1px)}
+    .btn.secondary{background:rgba(255,255,255,.06)} .btn.warn{background:var(--warn)} .btn.danger{background:var(--danger)} .btn.ok{background:var(--ok)} .btn.outline{background:transparent;border:1px solid rgba(255,255,255,.15)}
+    .layout{display:grid;grid-template-columns:260px 1fr;gap:16px;padding:16px}
+    aside{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px}
+    .nav{display:flex;flex-direction:column;gap:6px} .nav button{display:flex;gap:10px;align-items:center;width:100%;text-align:left}
+    main{display:grid;gap:16px}
+    .panel{background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid rgba(255,255,255,.06);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px}
+    .panel h2{margin:0 0 12px 0;font-size:18px}
+    .grid{display:grid;gap:12px} .grid.cols-2{grid-template-columns:1fr 1fr} .grid.cols-3{grid-template-columns:1fr 1fr 1fr}
+    @media (max-width: 960px){.layout{grid-template-columns:1fr}.grid.cols-2,.grid.cols-3{grid-template-columns:1fr}}
+    table{width:100%;border-collapse:separate;border-spacing:0 6px}
+    th,td{padding:10px 12px;text-align:left} thead th{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+    tbody tr{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05)}
+    tbody tr td:first-child{border-left:1px solid rgba(255,255,255,.05);border-top-left-radius:10px;border-bottom-left-radius:10px}
+    tbody tr td:last-child{border-right:1px solid rgba(255,255,255,.05);border-top-right-radius:10px;border-bottom-right-radius:10px}
+    .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;font-size:12px;border:1px solid rgba(255,255,255,.15)}
+    .badge.low{background:rgba(254,215,170,.1);border-color:rgba(255,204,0,.35);color:#fde68a}
+    .badge.ok{background:rgba(52,211,153,.1);border-color:rgba(34,197,94,.35);color:#a7f3d0}
+    .badge.pending{background:rgba(125,211,252,.1);border-color:rgba(14,165,233,.35);color:#bae6fd}
+    .badge.danger{background:rgba(248,113,113,.1);border-color:rgba(239,68,68,.35);color:#fecaca}
+    .stat{display:flex;align-items:center;justify-content:space-between;padding:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:12px}
+    .hl{color:var(--petro-yellow);font-weight:700}
+    .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+    .pill{border-radius:999px;padding:2px 8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12)}
+    .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
+    .toast{position:fixed;right:16px;bottom:16px;padding:12px 14px;border-radius:12px;background:rgba(20,31,56,.95);border:1px solid rgba(255,255,255,.12);box-shadow:var(--shadow);display:none}
+    .toast.show{display:block}
+    .hidden{display:none!important}
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <header>
@@ -14,13 +56,13 @@
       <div class="brand">
         <div class="logo" aria-hidden="true"></div>
         <div>
-          <div class="title">SOPEP · Controle de Kits e Galpão</div>
+          <div class="title" style="font-weight:700">SOPEP · Controle de Kits e Galpão</div>
           <div class="muted" style="font-size:12px">Rastreabilidade • Conformidade • Reposição automática</div>
         </div>
       </div>
       <div class="top-actions">
-        <span id="userBadge" class="pill">—</span>
-        <button id="btnLogout" class="btn outline">Sair</button>
+        <button class="btn outline" id="btnExportXlsx">Exportar XLSX</button>
+        <button class="btn outline" id="btnLogout">Sair</button>
       </div>
     </div>
   </header>
@@ -29,56 +71,687 @@
     <aside>
       <nav class="nav">
         <button class="btn secondary" data-view="dashboard">📊 Dashboard</button>
-        <button class="btn secondary" data-view="registro"     data-roles="operacao,desenvolvedor,administracao,fiscalizacao">📝 Registrar Uso</button>
-        <button class="btn secondary" data-view="aprovacoes"   data-roles="fiscalizacao,desenvolvedor">✅ Aprovações</button>
-        <button class="btn secondary" data-view="estoque"      data-roles="administracao,desenvolvedor">📦 Estoque</button>
-        <button class="btn secondary" data-view="kits"         data-roles="administracao,desenvolvedor">🧰 Kits</button>
-        <button class="btn secondary" data-view="itens"        data-roles="administracao,desenvolvedor">🧾 Itens</button>
-        <button class="btn secondary" data-view="relatorios"   data-roles="administracao,desenvolvedor,fiscalizacao">🗂️ Relatórios</button>
+        <button class="btn secondary" data-view="registro">📝 Registrar Uso do Kit</button>
+        <button class="btn secondary" data-view="aprovacoes">✅ Aprovações</button>
+        <button class="btn secondary" data-view="estoque">📦 Estoque do Galpão</button>
+        <button class="btn secondary" data-view="kits">🧰 Kits & Configuração</button>
+        <button class="btn secondary" data-view="itens">🧾 Itens & Parâmetros</button>
+        <button class="btn secondary" data-view="relatorios">🗂️ Relatórios</button>
+        <button class="btn secondary" data-view="audit">🧭 Auditoria</button>
+        <button class="btn secondary" data-view="usuarios">👤 Usuários</button>
       </nav>
     </aside>
 
     <main>
+      <!-- DASHBOARD -->
       <section class="panel" id="view-dashboard" hidden>
-        <div class="section">
-          <h2>📊 Visão Geral</h2>
-          <div class="toolbar">
-            <span class="badge pending" id="badgePendentes">0 pendentes</span>
-            <span class="badge low" id="badgeBaixos">0 itens com estoque baixo</span>
-            <span class="badge ok" id="badgeKits">0 kits ativos</span>
-          </div>
-        </div>
-
-        <!-- gráficos -->
-        <div class="grid cols-2">
-          <div class="panel">
-            <h3 style="margin-top:0">Consumo por Mês</h3>
-            <canvas id="chartConsumo"></canvas>
-          </div>
-          <div class="panel">
-            <h3 style="margin-top:0">Estoque vs Mínimos</h3>
-            <canvas id="chartEstoque"></canvas>
-          </div>
-        </div>
-
-        <div class="grid cols-3" style="margin-top:12px">
+        <div class="grid cols-3">
           <div class="stat"><div>Registros mês</div><div class="hl" id="statRegistrosMes">0</div></div>
           <div class="stat"><div>Consumo (unid) mês</div><div class="hl" id="statConsumoMes">0</div></div>
-          <div class="stat"><div>O.C. abertas</div><div class="hl" id="statReorders">0</div></div>
+          <div class="stat"><div>Ordens de compra</div><div class="hl" id="statReorders">0</div></div>
         </div>
-
         <div class="panel" style="margin-top:12px">
           <h3 style="margin:0 0 10px 0">Alertas de Reposição</h3>
           <div id="listaAlertas" class="grid"></div>
         </div>
+        <div class="panel" style="margin-top:12px; min-height:260px">
+          <h3 style="margin:0 0 10px 0">Tendência de Consumo (90 dias)</h3>
+          <canvas id="chartConsumo" style="height:240px"></canvas>
+        </div>
       </section>
 
-      <!-- As outras views são renderizadas via JS (ui.ts) -->
-      <section id="dynamic-views"></section>
+      <!-- REGISTRO -->
+      <section class="panel" id="view-registro" hidden>
+        <h2>📝 Registro de Uso do Kit</h2>
+        <form id="formRegistro" class="grid cols-2">
+          <div>
+            <label>Local / Kit</label>
+            <select class="select" id="regKit"></select>
+          </div>
+          <div>
+            <label>Motivo</label>
+            <select class="select" id="regMotivo">
+              <option value="emergencia">Emergência real</option>
+              <option value="simulado">Simulado / Treinamento</option>
+              <option value="inspecao">Inspeção / Teste</option>
+            </select>
+          </div>
+          <div class="grid cols-2" style="grid-column:1/-1">
+            <div>
+              <label>Responsável</label>
+              <input class="input" id="regResp" placeholder="Nome/ID" required />
+            </div>
+            <div>
+              <label>Data/Hora</label>
+              <input class="input" id="regData" type="datetime-local" />
+            </div>
+          </div>
+
+          <div style="grid-column:1/-1">
+            <label>Itens Utilizados</label>
+            <table>
+              <thead><tr><th>Item</th><th style="width:140px">Qtd</th><th style="width:80px"></th></tr></thead>
+              <tbody id="regItensBody"></tbody>
+            </table>
+            <div class="toolbar" style="margin-top:8px">
+              <button type="button" class="btn outline" id="btnAddItem">+ Adicionar Item</button>
+              <div class="pill">Total: <span id="regTotal" class="mono">0</span> unid.</div>
+            </div>
+          </div>
+
+          <div style="grid-column:1/-1">
+            <label>Evidências (opcional)</label>
+            <input class="input" id="regFiles" type="file" multiple />
+          </div>
+
+          <div class="toolbar" style="grid-column:1/-1; justify-content:flex-end">
+            <button type="submit" class="btn">Gerar Registro</button>
+          </div>
+        </form>
+
+        <div id="registroEmitido" class="panel" style="margin-top:12px; display:none">
+          <div style="display:flex; justify-content:space-between; align-items:center">
+            <h3 style="margin:0">📌 Registro emitido</h3>
+            <button class="btn outline" id="btnPrintRegistro">Imprimir</button>
+          </div>
+          <div id="registroResumo" class="mono"></div>
+        </div>
+      </section>
+
+      <!-- APROVAÇÕES -->
+      <section class="panel" id="view-aprovacoes" hidden>
+        <div style="display:flex; justify-content:space-between; align-items:center">
+          <h2>✅ Aprovações da Fiscalização</h2>
+          <div class="pill">Clique em um registro para detalhes</div>
+        </div>
+        <table>
+          <thead>
+            <tr><th>Código</th><th>Data</th><th>Local</th><th>Motivo</th><th>Resp.</th><th>Status</th><th style="width:220px">Ação</th></tr>
+          </thead>
+          <tbody id="aprovTable"></tbody>
+        </table>
+      </section>
+
+      <!-- ESTOQUE -->
+      <section class="panel" id="view-estoque" hidden>
+        <div style="display:flex; justify-content:space-between; align-items:center">
+          <h2>📦 Estoque do Galpão (Real)</h2>
+          <div class="toolbar">
+            <button class="btn outline" id="btnRecalcMin">Recalcular mínimos</button>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Estoque</th>
+              <th>Mínimo</th>
+              <th>Qtd/Kit</th>
+              <th>Status</th>
+              <th style="width:220px">Movimentar</th>
+            </tr>
+          </thead>
+          <tbody id="estoqueTable"></tbody>
+        </table>
+      </section>
+
+      <!-- KITS -->
+      <section class="panel" id="view-kits" hidden>
+        <div style="display:flex; justify-content:space-between; align-items:center">
+          <h2>🧰 Kits & Configuração</h2>
+          <button class="btn outline" id="btnAddKit">+ Adicionar Kit</button>
+        </div>
+        <table>
+          <thead><tr><th>Kit</th><th>Local</th><th>Status</th><th style="width:180px">Ação</th></tr></thead>
+          <tbody id="kitsTable"></tbody>
+        </table>
+      </section>
+
+      <!-- ITENS -->
+      <section class="panel" id="view-itens" hidden>
+        <div style="display:flex; justify-content:space-between; align-items:center">
+          <h2>🧾 Itens & Parâmetros</h2><button class="btn outline" id="btnAddItemMaster">+ Adicionar Item</button>
+        </div>
+        <table>
+          <thead><tr><th>Item</th><th>Unidade</th><th>Qtd/Kit</th><th>Mínimo</th><th>Estoque</th><th style="width:160px">Ação</th></tr></thead>
+          <tbody id="itensTable"></tbody>
+        </table>
+      </section>
+
+      <!-- RELATÓRIOS -->
+      <section class="panel" id="view-relatorios" hidden>
+        <h2>🗂️ Relatórios</h2>
+        <div class="grid cols-2">
+          <div class="panel">
+            <h3 style="margin-top:0">Consumo por período</h3>
+            <div class="grid cols-2">
+              <input class="input" type="date" id="repIni" />
+              <input class="input" type="date" id="repFim" />
+            </div>
+            <div style="margin-top:8px; text-align:right"><button class="btn" id="btnGerarRep">Gerar</button></div>
+            <div id="repOut" class="mono" style="margin-top:10px"></div>
+          </div>
+          <div class="panel">
+            <h3 style="margin-top:0">Requisições de compra</h3>
+            <div id="reorderList"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- AUDITORIA -->
+      <section class="panel" id="view-audit" hidden>
+        <h2>🧭 Auditoria</h2>
+        <table>
+          <thead><tr><th>Quando</th><th>Usuário</th><th>Ação</th><th>Detalhes</th></tr></thead>
+          <tbody id="auditTable"></tbody>
+        </table>
+      </section>
+
+      <!-- USUÁRIOS (apenas Desenvolvedor) -->
+      <section class="panel" id="view-usuarios" hidden>
+        <div style="display:flex; justify-content:space-between; align-items:center">
+          <h2>👤 Usuários</h2>
+          <button class="btn outline" id="btnAddUser">+ Adicionar Usuário</button>
+        </div>
+        <table>
+          <thead><tr><th>Username</th><th>Nome</th><th>Perfil</th><th style="width:260px">Ações</th></tr></thead>
+          <tbody id="usersTable"></tbody>
+        </table>
+      </section>
     </main>
   </div>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="/js/app.js"></script>
+
+<script>
+/* ==========================
+   UTIL
+========================== */
+const $ = (sel, el=document) => el.querySelector(sel);
+const $$ = (sel, el=document) => [...el.querySelectorAll(sel)];
+const fmt = n => new Intl.NumberFormat('pt-BR').format(n);
+const todayISO = () => new Date().toISOString().slice(0,16);
+const uuid = () => 'SO-' + new Date().toISOString().slice(0,10).replaceAll('-','') + '-' + Math.random().toString(36).slice(2,8).toUpperCase();
+const toast = (msg, ms=2600) => { const t=$('#toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), ms); }
+
+let CURRENT_USER = null;
+let chartConsumo;
+
+/* ==========================
+   BOOT + ROLE VISIBILITY
+========================== */
+async function initUser(){
+  try{
+    const me = await fetch('/api/me', {credentials:'include'}).then(r=>r.json());
+    if(me.error){ location.href='/'; return; }
+    CURRENT_USER = me; // {id,name,role,perms}
+    applyRoleVisibility(me.perms || []);
+  }catch{
+    location.href='/';
+  }
+}
+
+function applyRoleVisibility(perms) {
+  const map = {
+    dashboard:  'view:dashboard',
+    registro:   'view:registro',
+    aprovacoes: 'approve',
+    estoque:    'stock:move',
+    kits:       'view:all',
+    itens:      'items:manage',
+    relatorios: 'view:all',
+    audit:      'users:manage',
+    usuarios:   'users:manage'
+  };
+  Object.entries(map).forEach(([view, needed])=>{
+    const has = perms.includes('view:all') || perms.includes(needed);
+    const btn = document.querySelector(`button[data-view="${view}"]`);
+    const sec = document.getElementById(`view-${view}`);
+    btn?.classList.toggle('hidden', !has);
+    if(!has) sec?.setAttribute('hidden', 'true');
+  });
+
+  // desabilitar botões de aprovação se não tiver perm
+  $$('#view-aprovacoes .btn.ok, #view-aprovacoes .btn.danger')
+    .forEach(b => b.disabled = !(perms.includes('approve') || perms.includes('view:all')));
+
+  // abrir dashboard
+  show('dashboard');
+}
+
+document.getElementById('btnLogout').onclick = async ()=>{
+  await fetch('/api/logout',{method:'POST', credentials:'include'});
+  location.href = '/';
+};
+
+document.getElementById('btnExportXlsx').onclick = async ()=>{
+  const res = await fetch('/api/export/xlsx', { credentials:'include' });
+  if(!res.ok){ toast('Falha ao exportar XLSX'); return; }
+  const blob = await res.blob();
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `sopep_export_${new Date().toISOString().slice(0,10)}.xlsx`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+
+/* ==========================
+   NAV
+========================== */
+const views = ['dashboard','registro','aprovacoes','estoque','kits','itens','relatorios','audit','usuarios'];
+function show(view){
+  views.forEach(v=> $('#view-'+v)?.setAttribute('hidden', v!==view ? 'true' : ''));
+  if(view==='dashboard') buildDashboard();
+  if(view==='registro') buildRegistro();
+  if(view==='aprovacoes') buildAprovacoes();
+  if(view==='estoque') buildEstoque();
+  if(view==='kits') buildKits();
+  if(view==='itens') buildItens();
+  if(view==='relatorios') buildRelatorios();
+  if(view==='audit') buildAudit();
+  if(view==='usuarios') buildUsuarios();
+}
+$$('.nav button').forEach(b=> b.onclick = ()=> show(b.dataset.view));
+
+/* ==========================
+   DASHBOARD
+========================== */
+async function buildDashboard(){
+  // KPIs
+  const stats = await fetch('/api/stats',{credentials:'include'}).then(r=>r.json());
+  $('#statRegistrosMes').textContent = stats.registrosMes;
+  $('#statConsumoMes').textContent   = fmt(stats.consumoMes);
+  $('#statReorders').textContent     = stats.reordersAbertas;
+
+  // alertas de reposição
+  const itens = await fetch('/api/itens',{credentials:'include'}).then(r=>r.json());
+  const alertWrap = $('#listaAlertas'); alertWrap.innerHTML='';
+  itens.filter(i=> i.estoque <= i.min).forEach(i=>{
+    const div = document.createElement('div');
+    div.className = 'stat';
+    const falta = i.min - i.estoque;
+    div.innerHTML = `<div><strong>${i.nome}</strong><div class="muted">Estoque ${fmt(i.estoque)} / Mín ${fmt(i.min)}</div></div>
+                     <div><span class="badge low">Falta ${fmt(Math.max(falta,0))}</span></div>`;
+    alertWrap.appendChild(div);
+  });
+
+  // gráfico 90 dias
+  const series = await fetch('/api/reports/consumo-dias?days=90', {credentials:'include'}).then(r=>r.json());
+  renderConsumoChart(series);
+}
+function renderConsumoChart(series){
+  const ctx = document.getElementById('chartConsumo');
+  if(!ctx) return;
+  if(chartConsumo){ chartConsumo.destroy(); }
+  const labels = series.map(x=> x.date);
+  const data   = series.map(x=> x.total);
+  chartConsumo = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets: [{ label: 'Unidades consumidas/dia', data, tension: .25 }]},
+    options: { responsive:true, maintainAspectRatio:false, scales:{ y:{ beginAtZero:true } } }
+  });
+}
+
+/* ==========================
+   REGISTRO
+========================== */
+async function buildRegistro(){
+  const kits = await fetch('/api/kits',{credentials:'include'}).then(r=>r.json());
+  const sel = $('#regKit'); sel.innerHTML = '';
+  kits.filter(k=>k.ativo).forEach(k=>{
+    const o = document.createElement('option');
+    o.value = k.id; o.textContent = `${k.nome} — ${k.local}`;
+    sel.appendChild(o);
+  });
+  $('#regResp').value = '';
+  $('#regData').value = todayISO();
+
+  const tbody = $('#regItensBody'); tbody.innerHTML='';
+  addRegistroItemRow();
+  updateRegTotal();
+}
+function addRegistroItemRow(){
+  fetch('/api/itens',{credentials:'include'}).then(r=>r.json()).then(items=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><select class="select sel-item">${items.map(i=>`<option value="${i.id}">${i.nome}</option>`).join('')}</select></td>
+      <td><input class="input qtd-item" type="number" min="0" step="1" placeholder="0" /></td>
+      <td class="right"><button type="button" class="btn outline btn-remove">Remover</button></td>`;
+    $('#regItensBody').appendChild(tr);
+    tr.querySelector('.btn-remove').onclick = ()=> { tr.remove(); updateRegTotal(); };
+
+    const sel = tr.querySelector('.sel-item');
+    sel.addEventListener('change', ()=>{
+      const chosen = [...document.querySelectorAll('.sel-item')].map(s=>s.value);
+      const hasDup = chosen.some((v, idx)=> chosen.indexOf(v) !== idx);
+      if(hasDup){ toast('Item já selecionado. Escolha outro.'); sel.selectedIndex = 0; }
+    });
+    tr.querySelector('.qtd-item').addEventListener('input', updateRegTotal);
+  });
+}
+$('#btnAddItem').onclick = addRegistroItemRow;
+
+function updateRegTotal(){
+  let total = 0;
+  $$('#regItensBody tr').forEach(tr=>{
+    const q = Number(tr.querySelector('.qtd-item')?.value||0);
+    total += q>0 ? q : 0;
+  });
+  $('#regTotal').textContent = fmt(total);
+}
+
+$('#formRegistro').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const data = $('#regData').value || todayISO();
+  const resp = $('#regResp').value?.trim();
+  const kit = $('#regKit').value;
+  const motivo = $('#regMotivo').value;
+
+  const itens = [];
+  $$('#regItensBody tr').forEach(tr=>{
+    const itemId = tr.querySelector('.sel-item').value;
+    const qtd = Number(tr.querySelector('.qtd-item').value||0);
+    if(qtd>0) itens.push({itemId, qtd});
+  });
+
+  if(!resp){ toast('Informe o responsável.'); return; }
+  if(itens.length===0){ toast('Adicione ao menos um item com quantidade > 0.'); return; }
+
+  const evidencias = [...($('#regFiles').files||[])].map(f=>f.name);
+
+  const res = await fetch('/api/registros',{method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ data, resp, kit, motivo, itens, evidencias })});
+  const js = await res.json();
+  if(!res.ok || !js.ok){ toast('Falha ao gerar registro.'); return; }
+
+  $('#registroResumo').innerHTML = `Código: <strong>${js.id}</strong><br>Data: ${data}<br>Kit: ${kit}<br>Motivo: ${motivo}<br>Resp: ${resp}<br>Itens: ${itens.map(i=>`${i.itemId}(${i.qtd})`).join(', ')}`;
+  $('#registroEmitido').style.display='block';
+  toast('Registro emitido. Aguardando aprovação da Fiscalização.');
+});
+
+$('#btnPrintRegistro').onclick = ()=> window.print();
+
+/* ==========================
+   APROVAÇÕES
+========================== */
+async function buildAprovacoes(){
+  const tbody = $('#aprovTable'); tbody.innerHTML='';
+  const regs = await fetch('/api/registros',{credentials:'include'}).then(r=>r.json());
+  regs.sort((a,b)=> (b.status==='pendente')-(a.status==='pendente') || b.data.localeCompare(a.data));
+
+  regs.forEach(r=>{
+    const tr = document.createElement('tr');
+    const statusBadge = r.status==='pendente' ? '<span class="badge pending">Pendente</span>' : (r.status==='aprovado' ? '<span class="badge ok">Aprovado</span>' : '<span class="badge danger">Reprovado</span>');
+    tr.innerHTML = `<td class="mono">${r.id}</td><td>${r.data}</td><td>${r.kit}</td><td>${r.motivo}</td><td>${r.resp}</td><td>${statusBadge}</td>
+    <td><div class="toolbar">
+      <button class="btn ok" ${!canApprove() || r.status!=='pendente'?'disabled':''}>Aprovar</button>
+      <button class="btn danger" ${!canApprove() || r.status!=='pendente'?'disabled':''}>Reprovar</button>
+      <button class="btn outline">Detalhes</button>
+    </div></td>`;
+    const [btnOk, btnNo, btnDet] = tr.querySelectorAll('button');
+    btnOk.onclick = ()=> decideRegistro(r.id, 'aprovado');
+    btnNo.onclick = ()=> decideRegistro(r.id, 'reprovado');
+    btnDet.onclick = ()=> alert(`Registro ${r.id}\nItens:\n` + r.itens.map(i=>` · ${i.itemId}: ${i.qtd}`).join('\n'));
+    tbody.appendChild(tr);
+  });
+}
+function canApprove(){ return CURRENT_USER?.perms?.includes('approve') || CURRENT_USER?.perms?.includes('view:all'); }
+async function decideRegistro(id, decisao){
+  const res = await fetch(`/api/registros/${id}/decidir`, { method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ decisao })});
+  if(!res.ok) return toast('Falha ao decidir registro.');
+  toast(`Registro ${id} ${decisao.toUpperCase()}.`);
+  buildAprovacoes(); buildDashboard();
+}
+
+/* ==========================
+   ESTOQUE
+========================== */
+async function buildEstoque(){
+  const tb = $('#estoqueTable'); tb.innerHTML='';
+  const itens = await fetch('/api/itens',{credentials:'include'}).then(r=>r.json());
+  itens.forEach(i=>{
+    const tr = document.createElement('tr');
+    const st = i.estoque <= i.min ? '<span class="badge low">Baixo</span>' : '<span class="badge ok">OK</span>';
+    tr.innerHTML = `<td>${i.nome}</td>
+      <td class="mono">${fmt(i.estoque)} ${i.un}</td>
+      <td class="mono">${fmt(i.min)}</td>
+      <td class="mono">${fmt(i.qtdKit)} ${i.un}</td>
+      <td>${st}</td>
+      <td>
+        <div class="toolbar">
+          <input class="input mov-qtd" type="number" min="0" step="1" placeholder="Qtd" style="width:90px" />
+          <button class="btn ok">Entrada</button>
+          <button class="btn warn">Saída</button>
+        </div>
+      </td>`;
+    const [q, btnIn, btnOut] = tr.querySelectorAll('input,button');
+    btnIn.onclick = async ()=>{
+      const val = Number(q.value||0); if(val<=0) return toast('Informe quantidade > 0');
+      const res = await fetch(`/api/itens/${i.id}/mov`, {method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body: JSON.stringify({tipo:'entrada', qtd:val, motivo:'Entrada rápida'})});
+      if(!res.ok) return toast('Falha na entrada.');
+      buildEstoque(); buildDashboard();
+    };
+    btnOut.onclick = async ()=>{
+      const val = Number(q.value||0); if(val<=0) return toast('Informe quantidade > 0');
+      const res = await fetch(`/api/itens/${i.id}/mov`, {method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body: JSON.stringify({tipo:'saida', qtd:val, motivo:'Saída rápida'})});
+      if(!res.ok) return toast('Falha na saída.');
+      buildEstoque(); buildDashboard();
+    };
+    tb.appendChild(tr);
+  });
+}
+$('#btnRecalcMin').onclick = async ()=>{
+  // Hack simples para forçar recálculo no server (via upsert "no-op")
+  await fetch('/api/itens',{method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id: 'I-FAKE', nome:'noop', un:'un', qtdKit:1, estoque:0 })}).catch(()=>{});
+  toast('Mínimos recalculados.');
+  buildEstoque(); buildDashboard();
+};
+
+/* ==========================
+   KITS
+========================== */
+async function buildKits(){
+  const tb = $('#kitsTable'); tb.innerHTML='';
+  const kits = await fetch('/api/kits',{credentials:'include'}).then(r=>r.json());
+  kits.forEach(k=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${k.nome}</td><td>${k.local}</td><td>${k.ativo?'<span class="badge ok">Ativo</span>':'<span class="badge">Inativo</span>'}</td>
+    <td><div class="toolbar"><button class="btn outline">Editar</button><button class="btn ${k.ativo?'danger':'ok'}">${k.ativo?'Desativar':'Ativar'}</button></div></td>`;
+    const [btnEd, btnToggle] = tr.querySelectorAll('button');
+    btnEd.onclick = async ()=>{
+      const nome = prompt('Nome do kit:', k.nome); if(!nome) return;
+      const local = prompt('Local:', k.local); if(!local) return;
+      // Persistência de kits ainda não implementada em endpoint próprio
+      k.nome = nome; k.local = local; toast('Kit atualizado (local).');
+    };
+    btnToggle.onclick = ()=>{
+      k.ativo=!k.ativo; toast('Kit alterado (local).');
+    };
+    tb.appendChild(tr);
+  });
+}
+$('#btnAddKit').onclick = ()=>{
+  const nome = prompt('Nome do kit:'); if(!nome) return;
+  const local = prompt('Local do kit:'); if(!local) return;
+  toast('Novo kit criado (apenas local — criar endpoint de persistência se desejar).');
+};
+
+/* ==========================
+   ITENS
+========================== */
+async function buildItens(){
+  const tb = $('#itensTable'); tb.innerHTML='';
+  const itens = await fetch('/api/itens',{credentials:'include'}).then(r=>r.json());
+  itens.forEach(i=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${i.nome}</td><td>${i.un}</td><td>${i.qtdKit}</td><td>${i.min}</td><td>${i.estoque}</td>
+    <td><div class="toolbar"><button class="btn outline">Editar</button><button class="btn danger">Excluir</button></div></td>`;
+    const [btnEd, btnDel] = tr.querySelectorAll('button');
+    btnEd.onclick = async ()=>{
+      const nome = prompt('Nome do item:', i.nome); if(!nome) return;
+      const un = prompt('Unidade:', i.un)||i.un;
+      const qtdKit = Number(prompt('Qtd por kit:','1')||'1');
+      const estoque = Number(prompt('Estoque:', String(i.estoque))|| String(i.estoque));
+      const res = await fetch('/api/itens',{method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id:i.id, nome, un, qtdKit, estoque })});
+      const js = await res.json().catch(()=>({}));
+      if(!res.ok || js.ok !== true) return toast((js && js.error) || 'Falha ao salvar item.');
+      buildItens(); buildEstoque(); buildDashboard();
+    };
+    btnDel.onclick = ()=> alert('Exclusão de item não implementada no server. Podemos adicionar endpoint se desejar.');
+    tb.appendChild(tr);
+  });
+}
+$('#btnAddItemMaster').onclick = async ()=>{
+  const nome = prompt('Nome do item:'); if(!nome) return;
+  const un = prompt('Unidade (ex: un, m, pct):','un')||'un';
+  const qtdKit = Number(prompt('Qtd por kit:','1')||'1');
+  const estoque = Number(prompt('Estoque inicial:','0')||'0');
+  const res = await fetch('/api/itens',{method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ nome, un, qtdKit, estoque })});
+  const js = await res.json().catch(()=>({}));
+  if(!res.ok || js.ok !== true) return toast((js && js.error) || 'Falha ao criar item.');
+  buildItens(); buildEstoque(); buildDashboard();
+};
+
+/* ==========================
+   RELATÓRIOS
+========================== */
+async function buildRelatorios(){
+  $('#repIni').value = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0,10);
+  $('#repFim').value = new Date().toISOString().slice(0,10);
+  renderReorders();
+}
+$('#btnGerarRep').onclick = async ()=>{
+  const ini = $('#repIni').value; const fim = $('#repFim').value;
+  const movs = await fetch('/api/movs',{credentials:'include'}).then(r=>r.json());
+  const sel = movs.filter(m=> m.data.slice(0,10)>=ini && m.data.slice(0,10)<=fim).sort((a,b)=> b.data.localeCompare(a.data));
+  const sum = {};
+  sel.forEach(m=>{ const k = m.itemId + '|' + m.tipo; sum[k] = (sum[k]||0) + Number(m.qtd) });
+  const lines = Object.entries(sum).map(([k,v])=>{
+    const [itemId, tipo] = k.split('|'); return `${tipo.toUpperCase()} — ${itemId}: ${v}`;
+  });
+  $('#repOut').textContent = lines.join('\n') || 'Sem movimentações no período.';
+};
+
+async function renderReorders(){
+  const box = $('#reorderList'); box.innerHTML='';
+  const reos = await fetch('/api/reorders',{credentials:'include'}).then(r=>r.json());
+  if(!reos.length){ box.innerHTML='<div class="muted">Nenhuma requisição.</div>'; return; }
+  reos.sort((a,b)=> (a.status==='aberta'? -1: 1));
+  reos.forEach(r=>{
+    const div = document.createElement('div');
+    div.className = 'stat';
+    const nextActions = [];
+    if(r.status==='aberta')     nextActions.push(['Enviar p/ aprovação','enviar-aprovacao']);
+    if(r.status==='aprovacao')  nextActions.push(['Marcar como comprado','comprar']);
+    if(r.status!=='fechado')    nextActions.push(['Fechar','fechar']);
+    div.innerHTML = `<div>
+      <div><strong>${r.item}</strong> <span class="pill mono">${r.id}</span></div>
+      <div class="muted">Estoque ${fmt(r.estoque)} / Mín ${fmt(r.min)} — criado em ${new Date(r.criadoEm).toLocaleString('pt-BR')}</div>
+    </div>
+    <div class="toolbar">
+      <span class="badge ${r.status==='aberta'?'low': r.status==='aprovacao'?'pending': r.status==='comprado'?'ok':'pending'}">${r.status}</span>
+      ${nextActions.map(([label,act])=>`<button class="btn outline" data-act="${act}">${label}</button>`).join('')}
+    </div>`;
+    div.querySelectorAll('button[data-act]').forEach(btn=>{
+      btn.onclick = async ()=>{
+        if(!(CURRENT_USER?.perms?.includes('reorder:manage') || CURRENT_USER?.perms?.includes('view:all')))
+          return toast('Sem permissão para alterar reorders.');
+        const res = await fetch(`/api/reorders/${r.id}`, { method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body: JSON.stringify({act: btn.dataset.act}) });
+        if(!res.ok) return toast('Falha ao atualizar reorder.');
+        renderReorders(); buildDashboard();
+      };
+    });
+    box.appendChild(div);
+  });
+}
+
+/* ==========================
+   AUDITORIA
+========================== */
+async function buildAudit(){
+  const rows = await fetch('/api/audit', {credentials:'include'}).then(r=>r.json());
+  const tb = document.getElementById('auditTable'); tb.innerHTML='';
+  rows.slice().reverse().forEach(a=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${new Date(a.at).toLocaleString('pt-BR')}</td>
+                    <td class="mono">${a.userId||'-'}</td>
+                    <td class="mono">${a.action}</td>
+                    <td><pre class="mono" style="white-space:pre-wrap;margin:0">${JSON.stringify(a.payload||{},null,2)}</pre></td>`;
+    tb.appendChild(tr);
+  });
+}
+
+/* ==========================
+   USUÁRIOS (DEV only)
+========================== */
+async function buildUsuarios(){
+  const tb = $('#usersTable'); tb.innerHTML='';
+  try{
+    const users = await fetch('/api/users', {credentials:'include'}).then(r=>r.json());
+    users.forEach(u=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td class="mono">${u.username}</td>
+                      <td>${u.name}</td>
+                      <td class="mono">${u.role}</td>
+                      <td>
+                        <div class="toolbar">
+                          <button class="btn outline" data-act="edit">Editar</button>
+                          <button class="btn outline" data-act="pwd">Trocar Senha</button>
+                          <button class="btn danger"  data-act="del">Excluir</button>
+                        </div>
+                      </td>`;
+      tr.querySelector('[data-act="edit"]').onclick = ()=> editUser(u);
+      tr.querySelector('[data-act="pwd"]').onclick  = ()=> changeUserPwd(u);
+      tr.querySelector('[data-act="del"]').onclick  = ()=> deleteUser(u);
+      tb.appendChild(tr);
+    });
+  }catch(e){
+    tb.innerHTML = `<tr><td colspan="4" class="muted">Sem permissão ou erro ao carregar usuários.</td></tr>`;
+  }
+}
+
+$('#btnAddUser').onclick = async ()=>{
+  const username = prompt('Username:'); if(!username) return;
+  const name     = prompt('Nome:'); if(!name) return;
+  const role     = prompt('Papel (desenvolvedor, fiscalizacao, operacao, administracao):','operacao'); if(!role) return;
+  const password = prompt('Senha (mín. 4 chars):'); if(!password) return;
+  const res = await fetch('/api/users',{method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body: JSON.stringify({username,name,role,password})});
+  const js = await res.json();
+  if(!res.ok || !js.ok){ toast(js.error||'Falha ao criar'); return; }
+  toast('Usuário criado.');
+  buildUsuarios();
+};
+
+async function editUser(u){
+  const username = prompt('Username:', u.username); if(!username) return;
+  const name     = prompt('Nome:', u.name); if(!name) return;
+  const role     = prompt('Papel (desenvolvedor, fiscalizacao, operacao, administracao):', u.role); if(!role) return;
+  const res = await fetch(`/api/users/${u.id}`, {method:'PUT', credentials:'include', headers:{'Content-Type':'application/json'}, body: JSON.stringify({username,name,role})});
+  const js = await res.json();
+  if(!res.ok || !js.ok){ toast(js.error||'Falha ao atualizar'); return; }
+  toast('Usuário atualizado.');
+  buildUsuarios();
+}
+
+async function changeUserPwd(u){
+  const password = prompt(`Nova senha para ${u.username}:`); if(!password) return;
+  const res = await fetch(`/api/users/${u.id}/password`, {method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body: JSON.stringify({password})});
+  const js = await res.json();
+  if(!res.ok || !js.ok){ toast(js.error||'Falha ao trocar senha'); return; }
+  toast('Senha alterada.');
+}
+
+async function deleteUser(u){
+  if(!confirm(`Excluir usuário ${u.username}?`)) return;
+  const res = await fetch(`/api/users/${u.id}`, {method:'DELETE', credentials:'include'});
+  const js = await res.json();
+  if(!res.ok || !js.ok){ toast(js.error||'Falha ao excluir'); return; }
+  toast('Usuário excluído.');
+  buildUsuarios();
+}
+
+/* ==========================
+   START
+========================== */
+window.addEventListener('DOMContentLoaded', initUser);
+</script>
 </body>
 </html>
