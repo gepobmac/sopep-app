@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SOPEP | Login</title>
+  <link rel="stylesheet" href="/css/theme.css" />
+</head>
+<body class="center">
+  <div class="card auth" style="max-width:360px;margin:10vh auto;">
+    <div class="logo" aria-hidden="true"></div>
+    <h1>SOPEP</h1>
+    <p class="muted">Controle de Kits e Galpão</p>
+
+    <form id="formLogin" class="grid">
+      <label>Usuário</label>
+      <input class="input" id="loginUser" autocomplete="username" required />
+      <label>Senha</label>
+      <input class="input" id="loginPass" type="password" autocomplete="current-password" required />
+      <button type="submit" class="btn">Entrar</button>
+    </form>
+
+    <p class="muted small" style="margin-top:8px">
+      Usuários demo: <code>dev/dev123</code> · <code>fiscal/fiscal123</code> · <code>oper/oper123</code> · <code>admin/admin123</code>
+    </p>
+    <div id="loginMsg" class="msg"></div>
+  </div>
+
+  <script type="module">
+    const $ = (s,el=document)=>el.querySelector(s);
+    $('#formLogin').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const username = ($('#loginUser').value||'').trim();
+      const password = ($('#loginPass').value||'').trim();
+      const r = await fetch('/api/login', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        credentials:'include',
+        body: JSON.stringify({ username, password })
+      });
+      if(!r.ok){ $('#loginMsg').textContent = 'Usuário/senha inválidos'; return }
+      location.href = '/app';
+    });
+  </script>
+</body>
+</html>

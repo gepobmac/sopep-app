@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SOPEP | App</title>
+  <link rel="stylesheet" href="/css/theme.css" />
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <header>
+    <div class="container topbar">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <div class="title">SOPEP · Controle de Kits e Galpão</div>
+          <div class="muted" style="font-size:12px">Rastreabilidade • Conformidade • Reposição automática</div>
+        </div>
+      </div>
+      <div class="top-actions">
+        <span id="userBadge" class="pill">—</span>
+        <button id="btnLogout" class="btn outline">Sair</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout container">
+    <aside>
+      <nav class="nav">
+        <button class="btn secondary" data-view="dashboard">📊 Dashboard</button>
+        <button class="btn secondary" data-view="registro"     data-roles="operacao,desenvolvedor,administracao,fiscalizacao">📝 Registrar Uso</button>
+        <button class="btn secondary" data-view="aprovacoes"   data-roles="fiscalizacao,desenvolvedor">✅ Aprovações</button>
+        <button class="btn secondary" data-view="estoque"      data-roles="administracao,desenvolvedor">📦 Estoque</button>
+        <button class="btn secondary" data-view="kits"         data-roles="administracao,desenvolvedor">🧰 Kits</button>
+        <button class="btn secondary" data-view="itens"        data-roles="administracao,desenvolvedor">🧾 Itens</button>
+        <button class="btn secondary" data-view="relatorios"   data-roles="administracao,desenvolvedor,fiscalizacao">🗂️ Relatórios</button>
+      </nav>
+    </aside>
+
+    <main>
+      <section class="panel" id="view-dashboard" hidden>
+        <div class="section">
+          <h2>📊 Visão Geral</h2>
+          <div class="toolbar">
+            <span class="badge pending" id="badgePendentes">0 pendentes</span>
+            <span class="badge low" id="badgeBaixos">0 itens com estoque baixo</span>
+            <span class="badge ok" id="badgeKits">0 kits ativos</span>
+          </div>
+        </div>
+
+        <!-- gráficos -->
+        <div class="grid cols-2">
+          <div class="panel">
+            <h3 style="margin-top:0">Consumo por Mês</h3>
+            <canvas id="chartConsumo"></canvas>
+          </div>
+          <div class="panel">
+            <h3 style="margin-top:0">Estoque vs Mínimos</h3>
+            <canvas id="chartEstoque"></canvas>
+          </div>
+        </div>
+
+        <div class="grid cols-3" style="margin-top:12px">
+          <div class="stat"><div>Registros mês</div><div class="hl" id="statRegistrosMes">0</div></div>
+          <div class="stat"><div>Consumo (unid) mês</div><div class="hl" id="statConsumoMes">0</div></div>
+          <div class="stat"><div>O.C. abertas</div><div class="hl" id="statReorders">0</div></div>
+        </div>
+
+        <div class="panel" style="margin-top:12px">
+          <h3 style="margin:0 0 10px 0">Alertas de Reposição</h3>
+          <div id="listaAlertas" class="grid"></div>
+        </div>
+      </section>
+
+      <!-- As outras views são renderizadas via JS (ui.ts) -->
+      <section id="dynamic-views"></section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>
