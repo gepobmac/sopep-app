@@ -3,30 +3,212 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>SOPEP | Login</title>
+  <title>SOPEP | Controle de Kits e Galpão</title>
   <link rel="stylesheet" href="css/theme.css" />
 </head>
-<body class="center">
-  <div class="card auth">
-    <div class="logo" aria-hidden="true"></div>
-    <h1>SOPEP</h1>
-    <p class="muted">Controle de Kits e Galpão</p>
+<body>
+  <header>
+    <div class="container topbar">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 2v4"/>
+            <circle cx="12" cy="8" r="2"/>
+            <path d="M7 10a5 5 0 1 0 10 0"/>
+            <path d="M5 14c0 3.866 3.582 7 8 7s8-3.134 8-7"/>
+          </svg>
+        </div>
+        <div>
+          <div class="title">SOPEP · Controle de Kits e Galpão</div>
+          <div class="muted" style="font-size:12px">Rastreabilidade • Conformidade • Reposição automática</div>
+        </div>
+      </div>
+      <div class="top-actions">
+        <label class="sr" for="perfil">Perfil</label>
+        <select id="perfil" class="select">
+          <option value="operacao">Perfil: Operação</option>
+          <option value="fiscal">Perfil: Fiscalização</option>
+          <option value="gestor">Perfil: Gestão</option>
+        </select>
+        <button class="btn outline" id="exportCsv">Exportar CSV</button>
+        <button class="btn outline" id="resetDb">Resetar Banco</button>
+      </div>
+    </div>
+  </header>
 
-    <form id="formLogin" class="grid">
-      <label>Usuário</label>
-      <input class="input" id="loginUser" autocomplete="username" required />
-      <label>Senha</label>
-      <input class="input" id="loginPass" type="password" autocomplete="current-password" required />
-      <button type="submit" class="btn">Entrar</button>
-    </form>
+  <div class="layout container">
+    <aside>
+      <nav class="nav">
+        <button class="btn secondary" data-view="dashboard">📊 Dashboard</button>
+        <button class="btn secondary" data-view="registro">📝 Registrar Uso do Kit</button>
+        <button class="btn secondary" data-view="aprovacoes">✅ Aprovações</button>
+        <button class="btn secondary" data-view="estoque">📦 Estoque do Galpão</button>
+        <button class="btn secondary" data-view="kits">🧰 Kits & Configuração</button>
+        <button class="btn secondary" data-view="itens">🧾 Itens & Parâmetros</button>
+        <button class="btn secondary" data-view="relatorios">🗂️ Relatórios</button>
+      </nav>
+    </aside>
 
-    <p class="muted small" style="margin-top:8px">
-      Perfis: <b>desenvolvedor</b>, <b>fiscalizacao</b>, <b>operacao</b>, <b>administracao</b>.<br />
-      Usuário inicial: <code>dev</code> / Senha: <code>dev123</code>
-    </p>
-    <div id="loginMsg" class="msg"></div>
+    <main>
+      <section class="panel" id="view-dashboard" hidden>
+        <div class="section">
+          <h2>📊 Visão Geral</h2>
+          <div class="toolbar">
+            <span class="badge pending" id="badgePendentes">0 pendentes</span>
+            <span class="badge low" id="badgeBaixos">0 itens com estoque baixo</span>
+            <span class="badge ok" id="badgeKits">0 kits ativos</span>
+          </div>
+        </div>
+        <div class="grid cols-3">
+          <div class="stat"><div>Registros mês</div><div class="hl" id="statRegistrosMes">0</div></div>
+          <div class="stat"><div>Consumo (unid) mês</div><div class="hl" id="statConsumoMes">0</div></div>
+          <div class="stat"><div>Ordens de compra abertas</div><div class="hl" id="statReorders">0</div></div>
+        </div>
+        <div class="panel" style="margin-top:12px">
+          <h3 style="margin:0 0 10px 0">Alertas de Reposição</h3>
+          <div id="listaAlertas" class="grid"></div>
+        </div>
+      </section>
+
+      <section class="panel" id="view-registro" hidden>
+        <h2>📝 Registro de Uso do Kit</h2>
+        <form id="formRegistro" class="grid cols-2">
+          <div>
+            <label>Local / Kit</label>
+            <select class="select" id="regKit"></select>
+          </div>
+          <div>
+            <label>Motivo</label>
+            <select class="select" id="regMotivo">
+              <option value="emergencia">Emergência real</option>
+              <option value="simulado">Simulado / Treinamento</option>
+              <option value="inspecao">Inspeção / Teste</option>
+            </select>
+          </div>
+          <div class="grid cols-2" style="grid-column:1/-1">
+            <div>
+              <label>Responsável</label>
+              <input class="input" id="regResp" placeholder="Nome/ID" required />
+            </div>
+            <div>
+              <label>Data/Hora</label>
+              <input class="input" id="regData" type="datetime-local" />
+            </div>
+          </div>
+
+          <div style="grid-column:1/-1">
+            <label>Itens Utilizados</label>
+            <table>
+              <thead><tr><th>Item</th><th style="width:140px">Qtd</th><th style="width:80px"></th></tr></thead>
+              <tbody id="regItensBody"></tbody>
+            </table>
+            <div class="right" style="margin-top:8px">
+              <button type="button" class="btn outline" id="btnAddItem">+ Adicionar Item</button>
+            </div>
+          </div>
+
+          <div style="grid-column:1/-1">
+            <label>Evidências (opcional)</label>
+            <input class="input" id="regFiles" type="file" multiple />
+          </div>
+
+          <div class="right" style="grid-column:1/-1">
+            <button type="submit" class="btn">Gerar Registro</button>
+          </div>
+        </form>
+
+        <div id="registroEmitido" class="panel" style="margin-top:12px; display:none">
+          <div class="section"><h3>📌 Registro emitido</h3><button class="btn outline" id="btnPrintRegistro">Imprimir</button></div>
+          <div id="registroResumo" class="mono"></div>
+        </div>
+      </section>
+
+      <section class="panel" id="view-aprovacoes" hidden>
+        <div class="section">
+          <h2>✅ Aprovações da Fiscalização</h2>
+          <div class="pill">Clique em um registro para detalhes</div>
+        </div>
+        <table>
+          <thead>
+            <tr><th>Código</th><th>Data</th><th>Local</th><th>Motivo</th><th>Resp.</th><th>Status</th><th style="width:180px">Ação</th></tr>
+          </thead>
+          <tbody id="aprovTable"></tbody>
+        </table>
+      </section>
+
+      <section class="panel" id="view-estoque" hidden>
+        <div class="section">
+          <h2>📦 Estoque do Galpão (Real)</h2>
+          <div class="toolbar">
+            <button class="btn outline" id="btnRecalcMin">Recalcular mínimos</button>
+            <button class="btn outline" id="btnNovaEntrada">Entrada rápida</button>
+            <button class="btn outline" id="btnNovaSaida">Saída rápida</button>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Estoque</th>
+              <th>Mínimo</th>
+              <th>Qtd/Kit</th>
+              <th>Necessário (kits)</th>
+              <th>Status</th>
+              <th style="width:220px">Movimentar</th>
+            </tr>
+          </thead>
+          <tbody id="estoqueTable"></tbody>
+        </table>
+      </section>
+
+      <section class="panel" id="view-kits" hidden>
+        <div class="section"><h2>🧰 Kits & Configuração</h2><button class="btn outline" id="btnAddKit">+ Adicionar Kit</button></div>
+        <table>
+          <thead><tr><th>Kit</th><th>Local</th><th>Status</th><th style="width:140px">Ação</th></tr></thead>
+          <tbody id="kitsTable"></tbody>
+        </table>
+      </section>
+
+      <section class="panel" id="view-itens" hidden>
+        <div class="section"><h2>🧾 Itens & Parâmetros</h2><button class="btn outline" id="btnAddItemMaster">+ Adicionar Item</button></div>
+        <table>
+          <thead><tr><th>Item</th><th>Unidade</th><th>Qtd/Kit</th><th>Mínimo</th><th>Estoque</th><th style="width:160px">Ação</th></tr></thead>
+          <tbody id="itensTable"></tbody>
+        </table>
+      </section>
+
+      <section class="panel" id="view-relatorios" hidden>
+        <h2>🗂️ Relatórios</h2>
+        <div class="grid cols-2">
+          <div class="panel">
+            <h3 style="margin-top:0">Consumo por período</h3>
+            <div class="grid cols-2">
+              <input class="input" type="date" id="repIni" />
+              <input class="input" type="date" id="repFim" />
+            </div>
+            <div class="right" style="margin-top:8px"><button class="btn" id="btnGerarRep">Gerar</button></div>
+            <div id="repOut" class="mono" style="margin-top:10px"></div>
+          </div>
+          <div class="panel">
+            <h3 style="margin-top:0">Requisições de compra</h3>
+            <div id="reorderList"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Diagnóstico (testes rápidos) -->
+      <section class="panel" id="view-tests">
+        <details>
+          <summary>🔧 Diagnóstico rápido</summary>
+          <pre id="testOutput" class="mono"></pre>
+        </details>
+      </section>
+    </main>
   </div>
 
-  <script type="module" src="js/login.js"></script>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- Módulos JS -->
+  <script type="module" src="js/app.js"></script>
 </body>
 </html>
