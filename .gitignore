@@ -1,3 +1,16 @@
+# node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# build
 dist/
+
+# NÃO commitar transpilados de TS no /server
 server/**/*.js
 server/**/*.js.map
+
+# IDE
+.vscode/
+.DS_Store
