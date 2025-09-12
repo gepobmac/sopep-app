@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SOPEP | Login</title>
+  <link rel="stylesheet" href="css/theme.css" />
+</head>
+<body class="center">
+  <div class="card auth">
+    <div class="logo" aria-hidden="true"></div>
+    <h1>SOPEP</h1>
+    <p class="muted">Controle de Kits e Galpão</p>
+
+    <form id="formLogin" class="grid">
+      <label>Usuário</label>
+      <input class="input" id="loginUser" autocomplete="username" required />
+      <label>Senha</label>
+      <input class="input" id="loginPass" type="password" autocomplete="current-password" required />
+      <button type="submit" class="btn">Entrar</button>
+    </form>
+
+    <p class="muted small" style="margin-top:8px">
+      Perfis: desenvolvedor, fiscalizacao, operacao, administracao.<br>
+      Usuário inicial: <code>dev</code> / Senha: <code>dev123</code>
+    </p>
+    <div id="loginMsg" class="msg"></div>
+  </div>
+
+  <script type="module" src="js/login.js"></script>
+</body>
+</html>
