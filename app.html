@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SOPEP | App</title>
+  <link rel="stylesheet" href="css/theme.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar-wrap">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <div class="title">SOPEP · Controle de Kits e Galpão</div>
+          <div class="muted sub">Rastreabilidade • Conformidade • Reposição automática</div>
+        </div>
+      </div>
+      <div class="top-actions" id="userBar" hidden>
+        <span class="pill" id="userInfo">—</span>
+        <button class="btn outline" id="btnLogout">Sair</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout container" id="app" hidden>
+    <aside>
+      <nav class="nav" id="nav">
+        <button class="btn secondary" data-view="dashboard">📊 Dashboard</button>
+        <button class="btn secondary" data-view="registro" data-allow="operacao,desenvolvedor,administracao">📝 Registrar Uso</button>
+        <button class="btn secondary" data-view="aprovacoes" data-allow="fiscalizacao,desenvolvedor">✅ Aprovações</button>
+        <button class="btn secondary" data-view="estoque" data-allow="desenvolvedor,administracao">📦 Estoque</button>
+        <button class="btn secondary" data-view="kits" data-allow="desenvolvedor">🧰 Kits</button>
+        <button class="btn secondary" data-view="itens" data-allow="desenvolvedor,administracao">🧾 Itens</button>
+        <button class="btn secondary" data-view="usuarios" data-allow="desenvolvedor">👤 Usuários</button>
+        <button class="btn secondary" data-view="relatorios" data-allow="desenvolvedor,administracao,fiscalizacao">🗂️ Relatórios</button>
+      </nav>
+    </aside>
+
+    <main>
+      <section class="panel" id="view-dashboard" hidden></section>
+      <section class="panel" id="view-registro" hidden></section>
+      <section class="panel" id="view-aprovacoes" hidden></section>
+      <section class="panel" id="view-estoque" hidden></section>
+      <section class="panel" id="view-kits" hidden></section>
+      <section class="panel" id="view-itens" hidden></section>
+      <section class="panel" id="view-usuarios" hidden></section>
+      <section class="panel" id="view-relatorios" hidden></section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
