@@ -4,8 +4,33 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import path from 'path';
 
-import { db, recalcMinimums, uuid, totalKits } from './data';
-import { loginHandler, logoutHandler, meHandler, authMiddleware, requireRole } from './auth';
+import * as Data from './data';
+
+// Use require para ser imune a diferenças de export (nomeado vs default)
+const AuthMod = require('./auth') as any;
+
+// Normaliza: pega handlers de (nomeado) OU (default) OU (default.default)
+const pick = (m: any, key: string) =>
+  m?.[key] ?? m?.default?.[key] ?? m?.default?.default?.[key];
+
+const loginHandler   = pick(AuthMod, 'loginHandler');
+const logoutHandler  = pick(AuthMod, 'logoutHandler');
+const meHandler      = pick(AuthMod, 'meHandler');
+const authMiddleware = pick(AuthMod, 'authMiddleware');
+const requireRole    = pick(AuthMod, 'requireRole');
+
+// Debug claro:
+console.log('[DEBUG] Auth raw keys:', Object.keys(AuthMod));
+console.log('[DEBUG] loginHandler?', !!loginHandler,
+            'logoutHandler?', !!logoutHandler,
+            'meHandler?', !!meHandler,
+            'authMiddleware?', !!authMiddleware,
+            'requireRole?', !!requireRole);
+console.log('[DEBUG] Data keys:', Object.keys(Data));
+
+if (!loginHandler || !logoutHandler || !meHandler || !authMiddleware || !requireRole) {
+  throw new Error('Auth handlers ausentes. Verifique exports de server/auth.ts (sem export default).');
+}
 
 const app = express();
 
@@ -14,27 +39,27 @@ app.use(express.json());
 app.use(cors({ origin: true, credentials: true }));
 
 // ===== Auth =====
-app.post('/api/login', loginHandler);
+app.post('/api/login',  loginHandler);
 app.post('/api/logout', logoutHandler);
 app.get('/api/me', authMiddleware, meHandler);
 
 // ===== Dados =====
-app.get('/api/itens', authMiddleware, (_req, res)=> res.json(db.itens));
-app.get('/api/kits',  authMiddleware, (_req, res)=> res.json(db.kits));
-app.get('/api/registros', authMiddleware, (_req, res)=> res.json(db.registros));
-app.get('/api/reorders',  authMiddleware, (_req, res)=> res.json(db.reorders));
-app.get('/api/movs',      authMiddleware, (_req, res)=> res.json(db.movs));
+app.get('/api/itens', authMiddleware, (_req, res)=> res.json(Data.db.itens));
+app.get('/api/kits',  authMiddleware, (_req, res)=> res.json(Data.db.kits));
+app.get('/api/registros', authMiddleware, (_req, res)=> res.json(Data.db.registros));
+app.get('/api/reorders',  authMiddleware, (_req, res)=> res.json(Data.db.reorders));
+app.get('/api/movs',      authMiddleware, (_req, res)=> res.json(Data.db.movs));
 app.get('/api/stats',     authMiddleware, (_req, res)=> {
   const now = new Date();
   const ym  = now.toISOString().slice(0,7);
-  const regsMes = db.registros.filter(r => (r.data||'').slice(0,7) === ym);
+  const regsMes = Data.db.registros.filter(r => (r.data||'').slice(0,7) === ym);
   const consumoMes = regsMes.reduce((acc,r)=> acc + r.itens.reduce((s,i)=>s+Number(i.qtd||0),0), 0);
-  const baixos = db.itens.filter(i=> i.estoque <= i.min).length;
-  const reordersAbertas = db.reorders.filter(r=> r.status === 'aberta').length;
+  const baixos = Data.db.itens.filter(i=> i.estoque <= i.min).length;
+  const reordersAbertas = Data.db.reorders.filter(r=> r.status === 'aberta').length;
   res.json({
-    pendentes: db.registros.filter(r=>r.status==='pendente').length,
+    pendentes: Data.db.registros.filter(r=>r.status==='pendente').length,
     baixos,
-    kitsAtivos: totalKits(),
+    kitsAtivos: Data.totalKits(),
     registrosMes: regsMes.length,
     consumoMes,
     reordersAbertas
@@ -45,46 +70,46 @@ app.get('/api/stats',     authMiddleware, (_req, res)=> {
 app.post('/api/registros/:id/decidir', authMiddleware, requireRole('fiscalizacao','desenvolvedor'), (req, res)=>{
   const { id } = req.params;
   const { decisao } = req.body as { decisao: 'aprovado'|'reprovado' };
-  const idx = db.registros.findIndex(r=>r.id===id);
+  const idx = Data.db.registros.findIndex(r=>r.id===id);
   if(idx<0) return res.status(404).json({ error:'Registro não encontrado' });
-  const reg = db.registros[idx];
+  const reg = Data.db.registros[idx];
   reg.status = decisao;
   reg.respCusto = decisao==='aprovado' ? 'Petrobras' : 'Operadora Portuária';
 
   reg.itens.forEach(it=>{
-    const item = db.itens.find(x=>x.id===it.itemId);
+    const item = Data.db.itens.find(x=>x.id===it.itemId);
     if(!item) return;
     item.estoque = Math.max(0, item.estoque - Number(it.qtd));
-    db.movs.push({ id: uuid('M'), data: new Date().toISOString(), tipo:'saida', itemId:item.id, qtd:Number(it.qtd), motivo:`Reposição do kit ${reg.kit} (registro ${reg.id})`, ref:id });
+    Data.db.movs.push({ id: Data.uuid('M'), data: new Date().toISOString(), tipo:'saida', itemId:item.id, qtd:Number(it.qtd), motivo:`Reposição do kit ${reg.kit} (registro ${reg.id})`, ref:id });
     if(item.estoque <= item.min){
-      const exists = db.reorders.some(r=> r.itemId===item.id && r.status==='aberta');
+      const exists = Data.db.reorders.some(r=> r.itemId===item.id && r.status==='aberta');
       if(!exists){
         const sug = Math.max(Math.ceil(item.min*1.5) - item.estoque, item.min - item.estoque + Math.ceil(item.min*0.2));
-        db.reorders.push({ id: uuid('OC'), itemId:item.id, item:item.nome, criadoEm:new Date().toISOString(), estoque:item.estoque, min:item.min, sugerido:sug, status:'aberta' });
+        Data.db.reorders.push({ id: Data.uuid('OC'), itemId:item.id, item:item.nome, criadoEm:new Date().toISOString(), estoque:item.estoque, min:item.min, sugerido:sug, status:'aberta' });
       }
     }
   });
 
-  db.registros[idx] = reg;
+  Data.db.registros[idx] = reg;
   res.json({ ok:true, registro: reg });
 });
 
 app.post('/api/itens/:id/mov', authMiddleware, requireRole('administracao','desenvolvedor'), (req, res)=>{
   const { id } = req.params;
   const { tipo, qtd, motivo } = req.body as { tipo:'entrada'|'saida', qtd:number, motivo:string };
-  const item = db.itens.find(i=>i.id===id);
+  const item = Data.db.itens.find(i=>i.id===id);
   if(!item) return res.status(404).json({ error:'Item não encontrado' });
   if(!(qtd>0)) return res.status(400).json({ error:'Quantidade inválida' });
 
   if(tipo==='entrada') item.estoque += Number(qtd);
   if(tipo==='saida')   item.estoque = Math.max(0, item.estoque - Number(qtd));
-  db.movs.push({ id: uuid('M'), data:new Date().toISOString(), tipo, itemId:item.id, qtd:Number(qtd), motivo, ref:null });
+  Data.db.movs.push({ id: Data.uuid('M'), data:new Date().toISOString(), tipo, itemId:item.id, qtd:Number(qtd), motivo, ref:null });
 
   if(item.estoque <= item.min){
-    const exists = db.reorders.some(r=> r.itemId===item.id && r.status==='aberta');
+    const exists = Data.db.reorders.some(r=> r.itemId===item.id && r.status==='aberta');
     if(!exists){
       const sug = Math.max(Math.ceil(item.min*1.5) - item.estoque, item.min - item.estoque + Math.ceil(item.min*0.2));
-      db.reorders.push({ id: uuid('OC'), itemId:item.id, item:item.nome, criadoEm:new Date().toISOString(), estoque:item.estoque, min:item.min, sugerido:sug, status:'aberta' });
+      Data.db.reorders.push({ id: Data.uuid('OC'), itemId:item.id, item:item.nome, criadoEm:new Date().toISOString(), estoque:item.estoque, min:item.min, sugerido:sug, status:'aberta' });
     }
   }
 
@@ -94,20 +119,20 @@ app.post('/api/itens/:id/mov', authMiddleware, requireRole('administracao','dese
 app.post('/api/itens', authMiddleware, requireRole('administracao','desenvolvedor'), (req, res)=>{
   const { id, nome, un, qtdKit, estoque } = req.body as { id?:string; nome:string; un:string; qtdKit:number; estoque:number };
   if(id){
-    const it = db.itens.find(x=>x.id===id); if(!it) return res.status(404).json({ error:'Item não encontrado' });
+    const it = Data.db.itens.find(x=>x.id===id); if(!it) return res.status(404).json({ error:'Item não encontrado' });
     Object.assign(it, { nome, un, qtdKit, estoque });
   } else {
     const newId = 'I-'+Math.random().toString(36).slice(2,5).toUpperCase();
-    db.itens.push({ id:newId, nome, un, qtdKit, min:0, estoque });
+    Data.db.itens.push({ id:newId, nome, un, qtdKit, min:0, estoque });
   }
-  recalcMinimums();
-  res.json({ ok:true, itens: db.itens });
+  Data.recalcMinimums();
+  res.json({ ok:true, itens: Data.db.itens });
 });
 
 app.post('/api/reorders/:id', authMiddleware, requireRole('administracao','desenvolvedor','fiscalizacao'), (req, res)=>{
   const { id } = req.params;
   const { act } = req.body as { act:'comprado'|'fechar' };
-  const r = db.reorders.find(x=>x.id===id); if(!r) return res.status(404).json({ error:'Reorder não encontrado' });
+  const r = Data.db.reorders.find(x=>x.id===id); if(!r) return res.status(404).json({ error:'Reorder não encontrado' });
   if(act==='comprado') r.status='comprado';
   if(act==='fechar')   r.status='fechado';
   res.json({ ok:true, reorder: r });
@@ -115,8 +140,8 @@ app.post('/api/reorders/:id', authMiddleware, requireRole('administracao','desen
 
 app.post('/api/registros', authMiddleware, (req, res)=>{
   const { data, resp, kit, motivo, itens, evidencias } = req.body as any;
-  const id = uuid('SO');
-  db.registros.push({ id, data, resp, kit, motivo, itens, evidencias: evidencias||[], status:'pendente' });
+  const id = Data.uuid('SO');
+  Data.db.registros.push({ id, data, resp, kit, motivo, itens, evidencias: evidencias||[], status:'pendente' });
   res.json({ ok:true, id });
 });
 
