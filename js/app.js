@@ -1,93 +1,120 @@
-// ============================
-// app.js — Bootstrap, roteamento e guards
-// ============================
+// app.js — bootstrap/roteamento e actions
+import { PROFILE_KEY, $, $$, toast } from './utils.js';
+import { seedIfEmpty, recalcMinimums, DB, store } from './db.js';
+import {
+  buildDashboard, buildRegistro, buildAprovacoes, buildEstoque,
+  buildKits, buildItens, buildRelatorios, renderReorders,
+  addItemMaster, addRegistroItemRow, handleRegistroSubmit, quickMovDialog,
+  gerarRelatorio
+} from './views.js';
 
-import { initDB, recalcMinimums, seedUsers } from './db.js';
-import { getCurrentUser, logout, canAccess } from './auth.js';
-import * as UI from './ui.js';
+// === Validadores de input numérico (não negativos) ===
+document.addEventListener('input', (e)=>{
+  if(e.target.matches('.mov-qtd, .qtd-item')){
+    const v = Number(e.target.value||0);
+    if(v < 0) e.target.value = 0;
+  }
+});
 
-// Helpers DOM
-const $  = (s, el=document) => el.querySelector(s);
-const $$ = (s, el=document) => [...el.querySelectorAll(s)];
+// === Seed inicial ===
+seedIfEmpty();
 
-export const toast = (msg, ms = 2600) => {
-  const t = $('#toast');
-  if (!t) return;
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), ms);
+// === Roteamento ===
+const views = ['dashboard','registro','aprovacoes','estoque','kits','itens','relatorios'];
+function show(view){
+  views.forEach(v => $('#view-'+v).hidden = (v!==view));
+  if(view==='dashboard')  buildDashboard();
+  if(view==='registro')   buildRegistro();
+  if(view==='aprovacoes') buildAprovacoes();
+  if(view==='estoque')    buildEstoque();
+  if(view==='kits')       buildKits();
+  if(view==='itens')      buildItens();
+  if(view==='relatorios') buildRelatorios();
+}
+window.show = show;
+
+// Nav buttons
+$$('.nav button').forEach(b => b.onclick = ()=> show(b.dataset.view));
+
+// === Ações globais do topo ===
+$('#exportCsv').onclick = exportCSV;
+$('#resetDb').onclick = () => {
+  if(confirm('Resetar banco local e recarregar?')){
+    localStorage.clear();
+    location.reload();
+  }
 };
-window.toast = toast;
 
-// Inicializa base e usuários padrão
-initDB();
-seedUsers();
-recalcMinimums();
+// === Perfil (RBAC visual) com persistência ===
+function applyProfile(p){
+  const isFiscal = (p==='fiscal');
+  $$('#view-aprovacoes .btn.ok, #view-aprovacoes .btn.danger').forEach(btn=> btn.disabled = !isFiscal);
 
-// Views disponíveis
-const views = [
-  'dashboard','registro','aprovacoes',
-  'estoque','kits','itens','usuarios','relatorios'
-];
-
-function show(view) {
-  views.forEach(v => $('#view-' + v).hidden = (v !== view));
-  switch (view) {
-    case 'dashboard':   UI.buildDashboard(); break;
-    case 'registro':    UI.buildRegistro(); break;
-    case 'aprovacoes':  UI.buildAprovacoes(); break;
-    case 'estoque':     UI.buildEstoque(); break;
-    case 'kits':        UI.buildKits(); break;
-    case 'itens':       UI.buildItens(); break;
-    case 'usuarios':    UI.buildUsuarios(); break;
-    case 'relatorios':  UI.buildRelatorios(); break;
-  }
-}
-window.appShow = show;
-
-// Navbar → alterna as telas
-$('#nav')?.addEventListener('click', (e) => {
-  const btn = e.target.closest('button[data-view]');
-  if (!btn) return;
-
-  const allow = btn.dataset.allow?.split(',').map(s => s.trim()) || null;
-  if (allow && !canAccess(allow)) {
-    toast('Acesso restrito a: ' + allow.join(', '));
-    return;
-  }
-
-  show(btn.dataset.view);
-});
-
-// Bootstrap da sessão
-const appShell = $('#app');
-const userBar  = $('#userBar');
-const userInfo = $('#userInfo');
-
-$('#btnLogout')?.addEventListener('click', () => {
-  logout();
-  location.replace('index.html');
-});
-
-function startApp() {
-  const user = getCurrentUser();
-  if (!user) {
-    location.replace('index.html');
-    return;
-  }
-
-  appShell.hidden = false;
-  userBar.hidden = false;
-  userInfo.textContent = `${user.nome} · ${user.role}`;
-
-  // RBAC declarativo no menu
-  $$('#nav [data-allow]').forEach(btn => {
-    const allow = btn.dataset.allow.split(',').map(s => s.trim());
-    btn.hidden = !canAccess(allow);
+  const nav = {
+    dashboard: true,
+    registro: ['operacao','gestor','fiscal'].includes(p),
+    aprovacoes: p==='fiscal',
+    estoque: p==='gestor',
+    kits: p==='gestor',
+    itens: p==='gestor',
+    relatorios: ['gestor','fiscal'].includes(p)
+  };
+  $$('.nav [data-view]').forEach(b=>{
+    const view = b.dataset.view;
+    b.style.display = (nav[view]!==false) ? 'flex' : 'none';
   });
-
-  show('dashboard');
 }
+const selPerfil = $('#perfil');
+selPerfil.addEventListener('change', e=>{
+  const p = e.target.value;
+  localStorage.setItem(PROFILE_KEY, p);
+  applyProfile(p);
+  toast('Perfil alterado: '+p);
+});
+const savedProfile = localStorage.getItem(PROFILE_KEY) || 'operacao';
+selPerfil.value = savedProfile;
+applyProfile(savedProfile);
 
-startApp();
+// === Ligações de eventos das views ===
+// Registro de uso
+$('#btnAddItem').onclick = addRegistroItemRow;
+$('#formRegistro').addEventListener('submit', handleRegistroSubmit);
+$('#btnPrintRegistro').onclick = ()=> window.print();
 
+// Estoque
+$('#btnRecalcMin').onclick  = ()=> { recalcMinimums(); buildEstoque(); };
+$('#btnNovaEntrada').onclick = ()=> quickMovDialog('entrada');
+$('#btnNovaSaida').onclick   = ()=> quickMovDialog('saida');
+
+// Itens
+$('#btnAddItemMaster').onclick = addItemMaster;
+
+// Relatórios
+$('#btnGerarRep').onclick = gerarRelatorio;
+
+// Inicial
+show('dashboard');
+renderReorders();
+
+// === Export CSV (com BOM para Excel) ===
+function exportCSV(){
+  const itens = store.get(DB.itens, []);
+  const regs  = store.get(DB.registros, []);
+  const movs  = store.get(DB.movs, []);
+  const kits  = store.get(DB.kits, []);
+
+  const csv = [];
+  csv.push('"TABELA","CAMPOS"');
+  csv.push('"ITENS","id;nome;un;qtdKit;min;estoque"');
+  itens.forEach(i=> csv.push(`"ITENS","${i.id};${i.nome};${i.un};${i.qtdKit};${i.min};${i.estoque}"`));
+  csv.push('"KITS","id;nome;local;ativo"');
+  kits.forEach(k=> csv.push(`"KITS","${k.id};${k.nome};${k.local};${k.ativo}"`));
+  csv.push('"REGISTROS","id;data;kit;motivo;resp;status;respCusto;itens(JSON)"');
+  regs.forEach(r=> csv.push(`"REGISTROS","${r.id};${r.data};${r.kit};${r.motivo};${r.resp};${r.status};${r.respCusto||''};${encodeURIComponent(JSON.stringify(r.itens))}"`));
+  csv.push('"MOVIMENTOS","id;data;tipo;itemId;qtd;motivo;ref"');
+  movs.forEach(m=> csv.push(`"MOVIMENTOS","${m.id};${m.data};${m.tipo};${m.itemId};${m.qtd};${m.motivo};${m.ref||''}"`));
+
+  const blob = new Blob(["\uFEFF"+csv.join('\n')], { type:'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'sopep_export.csv'; a.click();
+}
