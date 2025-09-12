@@ -260,4 +260,133 @@ export function buildKits(){
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${k.nome}</td><td>${k.local}</td>
-      <td>${k.at
+      <td>${k.ativo?'<span class="badge ok">Ativo</span>':'<span class="badge">Inativo</span>'}</td>
+      <td>
+        <div class="toolbar">
+          <button class="btn outline">Editar</button>
+          <button class="btn ${k.ativo?'danger':'ok'}">${k.ativo?'Desativar':'Ativar'}</button>
+        </div>
+      </td>`;
+    const [btnEd, btnToggle] = tr.querySelectorAll('button');
+    btnEd.onclick = ()=>{
+      const nome  = prompt('Nome do kit:', k.nome); if(!nome) return;
+      const local = prompt('Local:', k.local); if(!local) return;
+      k.nome = nome; k.local = local;
+      store.set(DB.kits, kits); recalcMinimums(); buildKits();
+    };
+    btnToggle.onclick = ()=>{
+      k.ativo=!k.ativo;
+      store.set(DB.kits, kits); recalcMinimums(); buildKits();
+    };
+    tb.appendChild(tr);
+  });
+}
+
+/* ===== Itens ===== */
+export function buildItens(){
+  const tb = $('#itensTable'); tb.innerHTML='';
+  const itens = store.get(DB.itens, []);
+  itens.forEach(i=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${i.nome}</td><td>${i.un}</td><td>${i.qtdKit}</td><td>${i.min}</td><td>${i.estoque}</td>
+      <td>
+        <div class="toolbar">
+          <button class="btn outline">Editar</button>
+          <button class="btn danger">Excluir</button>
+        </div>
+      </td>`;
+    const [btnEd, btnDel] = tr.querySelectorAll('button');
+    btnEd.onclick = ()=>{
+      const nome    = prompt('Nome do item:', i.nome); if(!nome) return;
+      const un      = prompt('Unidade:', i.un) || i.un;
+      const qtdKit  = Number(prompt('Qtd por kit:', i.qtdKit) || i.qtdKit);
+      const min     = Number(prompt('Mínimo:', i.min) || i.min);
+      const estoque = Number(prompt('Estoque:', i.estoque) || i.estoque);
+      Object.assign(i, { nome, un, qtdKit, min, estoque });
+      store.set(DB.itens, itens);
+      buildItens();
+    };
+    btnDel.onclick = ()=>{
+      if(!confirm('Excluir item?')) return;
+      const list = store.get(DB.itens, []).filter(x=>x.id!==i.id);
+      store.set(DB.itens, list);
+      buildItens();
+    };
+    tb.appendChild(tr);
+  });
+}
+export function addItemMaster(){
+  const id      = 'I-'+Math.random().toString(36).slice(2,5).toUpperCase();
+  const nome    = prompt('Nome do item:'); if(!nome) return;
+  const un      = prompt('Unidade (ex: un, m, pct):','un') || 'un';
+  const qtdKit  = Number(prompt('Qtd por kit:',1) || 1);
+  const estoque = Number(prompt('Estoque inicial:',0) || 0);
+  const arr     = store.get(DB.itens, []);
+  arr.push({ id, nome, un, qtdKit, min: 0, estoque });
+  store.set(DB.itens, arr);
+  recalcMinimums();
+  buildItens();
+}
+
+/* ===== Relatórios / Reorders ===== */
+export function buildRelatorios(){
+  $('#repIni').value = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0,10);
+  $('#repFim').value = new Date().toISOString().slice(0,10);
+  renderReorders();
+}
+
+export function gerarRelatorio(){
+  const ini  = $('#repIni').value;
+  const fim  = $('#repFim').value;
+  const movs = store.get(DB.movs, [])
+    .filter(m => m.data.slice(0,10)>=ini && m.data.slice(0,10)<=fim)
+    .sort((a,b)=> b.data.localeCompare(a.data));
+
+  const sum = {};
+  movs.forEach(m=>{
+    const k = m.itemId + '|' + m.tipo;
+    sum[k] = (sum[k] || 0) + Number(m.qtd);
+  });
+
+  const lines = Object.entries(sum).map(([k, v])=>{
+    const [itemId, tipo] = k.split('|');
+    return `${tipo.toUpperCase()} — ${getItemName(itemId)}: ${v}`;
+  });
+
+  $('#repOut').textContent = lines.join('\n') || 'Sem movimentações no período.';
+}
+
+export function renderReorders(){
+  const box  = $('#reorderList'); box.innerHTML='';
+  const reos = store.get(DB.reorders, []);
+  if (reos.length === 0) { box.innerHTML = '<div class="muted">Nenhuma requisição aberta.</div>'; return }
+  reos.sort((a,b)=>(a.status==='aberta' ? -1 : 1));
+  reos.forEach(r=>{
+    const div = document.createElement('div');
+    div.className = 'stat';
+    div.innerHTML = `
+      <div>
+        <div><strong>${r.item}</strong> <span class="pill mono">${r.id}</span></div>
+        <div class="muted">Estoque ${fmt(r.estoque)} / Mín ${fmt(r.min)} — criado em ${new Date(r.criadoEm).toLocaleString('pt-BR')}</div>
+      </div>
+      <div class="toolbar">
+        <span class="badge ${r.status==='aberta'?'low':'ok'}">${r.status}</span>
+        <button class="btn outline" data-act="comprado">Marcar como comprado</button>
+        <button class="btn outline" data-act="close">Fechar</button>
+      </div>`;
+    const [btnOrd, btnClose] = div.querySelectorAll('button');
+    btnOrd.onclick  = ()=> updateReorder(r.id, 'comprado');
+    btnClose.onclick = ()=> updateReorder(r.id, 'fechar');
+    box.appendChild(div);
+  });
+}
+
+export function updateReorder(id, act){
+  const reos = store.get(DB.reorders, []);
+  const r = reos.find(x=>x.id===id); if(!r) return;
+  if (act==='comprado') r.status='comprado';
+  if (act==='fechar')   r.status='fechado';
+  store.set(DB.reorders, reos);
+  renderReorders(); buildDashboard(); toast('Requisição '+id+' atualizada: '+r.status);
+}
