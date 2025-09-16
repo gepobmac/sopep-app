@@ -1,6 +1,18 @@
 {
   "cleanUrls": true,
-  "headers": [
-    { "source": "/(.*)\\.(js|css)$", "headers": [{ "key": "Cache-Control", "value": "max-age=0, no-cache" }] }
+  "trailingSlash": false,
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://miniature-dollop-697695jqj96qhr64v-3000.app.github.dev/"
+    },
+    {
+      "source": "/app",
+      "destination": "/app.html"
+    },
+    {
+      "source": "/app/(.*)",
+      "destination": "/app.html"
+    }
   ]
 }
